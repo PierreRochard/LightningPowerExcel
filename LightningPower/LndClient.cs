@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,9 +25,9 @@ namespace LightningPower
         public string WalletPassword = "test_password";
         public bool Autopilot = false;
 
-        public string BitcoindRpcUser = "default_user";
-        public string BitcoindRpcPassword = "default_password";
-        
+        public string BitcoindRpcUser = "test_user";
+        public string BitcoindRpcPassword = "test_password";
+
 
         public static string LndDataPath
         {
@@ -40,7 +39,7 @@ namespace LightningPower
                 return lndPath;
             }
         }
-        
+
         public string MacaroonString
         {
             get
@@ -116,7 +115,7 @@ namespace LightningPower
             if (MacaroonString == null) return;
             metadata.Add(new Metadata.Entry("macaroon", MacaroonString));
         }
-        
+
         public Channel RpcChannel
         {
             get
@@ -161,7 +160,7 @@ namespace LightningPower
                 }
                 else
                 {
-                    throw;
+                   // throw;
                 }
             }
         }
@@ -179,8 +178,16 @@ namespace LightningPower
         public GenSeedResponse GenerateSeed()
         {
             var request = new GenSeedRequest();
-            var response = GetWalletUnlockerClient().GenSeed(request);
-            return response;
+            try
+            {
+                var response = GetWalletUnlockerClient().GenSeed(request);
+                return response;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         public void InitWallet(string walletPassword, RepeatedField<string> seed)
@@ -255,10 +262,38 @@ namespace LightningPower
             return response;
         }
 
+        public IAsyncStreamReader<Transaction> SubscribeTransactions()
+        {
+            var request = new GetTransactionsRequest();
+            var response = GetLightningClient().SubscribeTransactions(request);
+            return response.ResponseStream;
+        }
+
         public NewAddressResponse NewAddress(NewAddressRequest.Types.AddressType addressType = NewAddressRequest.Types.AddressType.WitnessPubkeyHash)
         {
             var request = new NewAddressRequest { Type = addressType };
             var response = GetLightningClient().NewAddress(request);
+            return response;
+        }
+
+        public SignMessageResponse SignMessage(string message)
+        {
+            var request = new SignMessageRequest
+            {
+                Msg = ByteString.CopyFrom(message, Encoding.UTF8)
+            };
+            var response = GetLightningClient().SignMessage(request);
+            return response;
+        }
+
+        public VerifyMessageResponse VerifyMessage(string message, string signature)
+        {
+            var request = new VerifyMessageRequest
+            {
+                Msg = ByteString.CopyFrom(message, Encoding.UTF8),
+                Signature = signature
+            };
+            var response = GetLightningClient().VerifyMessage(request);
             return response;
         }
 
@@ -379,6 +414,77 @@ namespace LightningPower
             var request = new SendRequest { PaymentRequest = paymentRequest };
             var deadline = DateTime.UtcNow.AddSeconds(30);
             var response = GetLightningClient().SendPaymentSync(request, deadline: deadline);
+            return response;
+        }
+
+        public DeleteAllPaymentsResponse DeleteAllPayments()
+        {
+            var request = new DeleteAllPaymentsRequest();
+            var response = GetLightningClient().DeleteAllPayments(request);
+            return response;
+        }
+
+        public ListInvoiceResponse ListInvoices()
+        {
+            var request = new ListInvoiceRequest();
+            var response = GetLightningClient().ListInvoices(request);
+            return response;
+        }
+
+        public AddInvoiceResponse AddInvoice(string memo, long value)
+        {
+            var request = new Invoice
+            {
+                Memo = memo,
+                Value = value,
+                FallbackAddr = NewAddress(NewAddressRequest.Types.AddressType.NestedPubkeyHash).Address,
+                Private = true
+            };
+            var response = GetLightningClient().AddInvoice(request);
+            return response;
+        }
+
+        public IAsyncStreamReader<Invoice> SubscribeInvoices()
+        {
+            var request = new InvoiceSubscription();
+            var response = GetLightningClient().SubscribeInvoices(request);
+            return response.ResponseStream;
+        }
+
+        public ChannelGraph DescribeGraph()
+        {
+            var request = new ChannelGraphRequest
+            {
+                
+            };
+            var response = GetLightningClient().DescribeGraph(request);
+            return response;
+        }
+
+        public ChannelEdge GetChannelEdge(ulong channelId)
+        {
+            var request = new ChanInfoRequest
+            {
+                ChanId = channelId
+            };
+            var response = GetLightningClient().GetChanInfo(request);
+            return response;
+        }
+
+        public NodeInfo GetNodeInfo(string pub_key)
+        {
+            var request = new NodeInfoRequest
+            {
+                PubKey = pub_key
+            };
+            var response = GetLightningClient().GetNodeInfo(request);
+            return response;
+        }
+
+        public NetworkInfo GetNetworkInfo()
+        {
+            var request = new NetworkInfoRequest();
+            var response = GetLightningClient().GetNetworkInfo(request);
             return response;
         }
     }

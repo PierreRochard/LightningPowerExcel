@@ -130,7 +130,5 @@ namespace LightningPower
         {
             bw.ReportProgress(0, e.Data);
         }
-        
-        
     }
 }

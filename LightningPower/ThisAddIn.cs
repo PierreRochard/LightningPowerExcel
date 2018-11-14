@@ -129,7 +129,14 @@ namespace LightningPower
 
         private void ThisAddIn_Shutdown(object sender, EventArgs e)
         {
-            if (!NodesSheet.IsProcessOurs) return;
+            try
+            {
+                if (!NodesSheet.IsProcessOurs) return;
+            }
+            catch (NullReferenceException)
+            {
+                return;
+            }
 
             try
             {

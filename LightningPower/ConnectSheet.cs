@@ -103,15 +103,20 @@ namespace LightningPower
 
         private void ConnectButtonOnClick(object sender, EventArgs e)
         {
-            LApp.Connect();
-            //try
-           // {
-             //   LApp.Connect();
-           // }
-           // catch (RpcException rpcException)
-           // {
-           //     DisplayError("Connect error", rpcException.Status.Detail);
-            //}
+            //LApp.Connect();
+            try
+            {
+                LApp.Connect();
+            }
+            catch (RpcException rpcException)
+            {
+                DisplayRpcError(rpcException);
+            }
+        }
+
+        public void DisplayRpcError(RpcException exception)
+        {
+            DisplayError("Connect error", exception.Status.Detail);
         }
 
         public void DisplayError(string errorType, string errorMessage)

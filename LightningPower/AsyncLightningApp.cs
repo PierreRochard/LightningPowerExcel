@@ -92,15 +92,27 @@ namespace LightningPower
 
         private void BwChannelsQuery(object sender, DoWorkEventArgs e)
         {
-            var openChannels = LndClient.ListChannels();
-            var pendingChannels = LndClient.ListPendingChannels();
-            var closedChannels = LndClient.ListClosedChannels();
-            var result = Tuple.Create(openChannels, pendingChannels, closedChannels);
-            e.Result = result;
+            try
+            {
+                var openChannels = LndClient.ListChannels();
+                var pendingChannels = LndClient.ListPendingChannels();
+                var closedChannels = LndClient.ListClosedChannels();
+                var result = Tuple.Create(openChannels, pendingChannels, closedChannels);
+                e.Result = result;
+            }
+            catch (Exception)
+            {
+                e.Result = null;
+            }
         }
 
         private void BwPendingChannelsCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            if (e.Result == null)
+            {
+                Utilities.RemoveLoadingMark(_excelAddIn.Wb.Sheets[SheetNames.Channels]);
+                return;
+            }
             var result = (Tuple<ListChannelsResponse, PendingChannelsResponse, ClosedChannelsResponse>)e.Result;
             _excelAddIn.ChannelsSheet.Update(result);
             Utilities.RemoveLoadingMark(_excelAddIn.Wb.Sheets[SheetNames.Channels]);
@@ -108,17 +120,36 @@ namespace LightningPower
 
         private void BwBalancesCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+
+            if (e.Result == null)
+            {
+                Utilities.RemoveLoadingMark(_excelAddIn.BalancesSheet.Ws);
+                if (e.Error != null && e.Error.GetType() == typeof(RpcException))
+                {
+                    _excelAddIn.ConnectSheet.DisplayRpcError((RpcException)e.Error);
+                    _excelAddIn.ConnectSheet.Ws.Activate();
+                }
+                return;
+            }
             var result = (Tuple<WalletBalanceResponse, ChannelBalanceResponse>)e.Result;
             _excelAddIn.BalancesSheet.Update(result);
         }
 
         private void BwBalancesQuery(object sender, DoWorkEventArgs e)
         {
-            var walletBalance = LndClient.WalletBalance();
-            var channelBalance = LndClient.ChannelBalance();
-            var result = Tuple.Create(walletBalance, channelBalance);
-            e.Result = result;
+            try
+            {
+                var walletBalance = LndClient.WalletBalance();
+                var channelBalance = LndClient.ChannelBalance();
+                var result = Tuple.Create(walletBalance, channelBalance);
+                e.Result = result;
+            }
+            catch (RpcException)
+            {
+                e.Result = null;
+            }
         }
+
 
         // ReSharper disable once UnusedParameter.Local
         private void BwConnectCompleted(object sender, RunWorkerCompletedEventArgs e, ConnectSheet connectSheet)
@@ -126,6 +157,7 @@ namespace LightningPower
             try
             {
                 var response = (GetInfoResponse)e.Result;
+                if (response == null) return;
                 connectSheet.GetInfoSheet.Update(response);
                 connectSheet.FormatDimensions();
             }
@@ -141,13 +173,32 @@ namespace LightningPower
         // ReSharper disable once UnusedParameter.Local
         private static void BwQuery(object sender, DoWorkEventArgs e, Func<IMessage> query)
         {
+            try
+            {
             e.Result = query();
+
+            }
+            catch (RpcException)
+            {
+                e.Result = null;
+            }
         }
         
         // ReSharper disable once UnusedParameter.Local
         private void BwListCompleted<TMessage, TResponse>(object sender, RunWorkerCompletedEventArgs e,
             TableSheet<TMessage> tableSheet) where TMessage : IMessage where TResponse : IMessage
         {
+            if (e.Result == null)
+            {
+                Utilities.RemoveLoadingMark(tableSheet.Ws);
+                if (e.Error != null && e.Error.GetType() == typeof(RpcException))
+                {
+                    _excelAddIn.ConnectSheet.DisplayRpcError((RpcException)e.Error);
+                    _excelAddIn.ConnectSheet.Ws.Activate();
+                }
+                return;
+            }
+
             try
             {
                 var response = (TResponse)e.Result;
