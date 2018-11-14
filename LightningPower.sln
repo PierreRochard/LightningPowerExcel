@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.2041
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightningPower", "LightningPower\LightningPower.csproj", "{239B1D9E-17CA-429A-8D46-EAA68CC25595}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightningPowerTests", "LightningPowerTests\LightningPowerTests.csproj", "{CE5868E1-E9FB-4279-B550-428A1916F62A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{239B1D9E-17CA-429A-8D46-EAA68CC25595}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{239B1D9E-17CA-429A-8D46-EAA68CC25595}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{239B1D9E-17CA-429A-8D46-EAA68CC25595}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE5868E1-E9FB-4279-B550-428A1916F62A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE5868E1-E9FB-4279-B550-428A1916F62A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE5868E1-E9FB-4279-B550-428A1916F62A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE5868E1-E9FB-4279-B550-428A1916F62A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

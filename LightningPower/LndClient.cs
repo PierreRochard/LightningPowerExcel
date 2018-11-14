@@ -135,6 +135,7 @@ namespace LightningPower
 
         public LndClient()
         {
+            Environment.SetEnvironmentVariable("GRPC_SSL_CIPHER_SUITES", "HIGH+ECDSA", EnvironmentVariableTarget.Process);
             Config = new LndClientConfiguration();
         }
 
