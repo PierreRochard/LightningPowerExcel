@@ -29,7 +29,12 @@ namespace LightningPower
             {
                 _excelAddIn.NodesSheet.StartLocalNode(LndClient.Config);
             }
-            LndClient.TryUnlockWallet(LndClient.Config.WalletPassword);
+            var mnemonic = LndClient.TryUnlockWallet(LndClient.Config.WalletPassword);
+            if (mnemonic.Count > 0)
+            {
+                _excelAddIn.MnemonicSheet.Populate(mnemonic);
+                return;
+            }
             Refresh(SheetNames.Payments);
             Refresh(SheetNames.Channels);
           //  Refresh(SheetNames.Transactions);

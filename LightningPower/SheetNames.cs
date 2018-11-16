@@ -2,6 +2,7 @@
 {
     public static class SheetNames
     {
+        internal const string Mnemonic = "Mnemonic";
         internal const string Connect = "Connection";
         internal const string Peers = "Peers";
         internal const string Balances = "Balances";

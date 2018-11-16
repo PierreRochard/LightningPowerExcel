@@ -13,6 +13,7 @@ namespace LightningPower
         public AsyncLightningApp LApp;
         public Workbook Wb;
 
+        public MnemonicSheet MnemonicSheet;
         public ConnectSheet ConnectSheet;
         public PeersSheet PeersSheet;
         public BalancesSheet BalancesSheet;
@@ -57,6 +58,9 @@ namespace LightningPower
         {
             Wb = wb;
             LApp = new AsyncLightningApp(this);
+
+            CreateSheet(SheetNames.Mnemonic);
+            MnemonicSheet = new MnemonicSheet(Wb.Sheets[SheetNames.Mnemonic]);
 
             CreateSheet(SheetNames.Connect);
             ConnectSheet = new ConnectSheet(Wb.Sheets[SheetNames.Connect], LApp);

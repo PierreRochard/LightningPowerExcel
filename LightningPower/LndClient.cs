@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace LightningPower
         private string _caCertPath;
         private string _caCertString;
 
-        public string Network = "testnet";
+        public string Network = "mainnet";
         public string Host = "localhost";
         public double Port = 10009;
         public string WalletPassword = "test_password";
@@ -51,7 +52,11 @@ namespace LightningPower
                     var macaroonString = BitConverter.ToString(macaroonBytes).Replace("-", "").ToLower();
                     return macaroonString;
                 }
-                catch (FileNotFoundException e)
+                catch (FileNotFoundException)
+                {
+                    return null;
+                }
+                catch (DirectoryNotFoundException)
                 {
                     return null;
                 }
@@ -71,10 +76,13 @@ namespace LightningPower
             set => _macaroonPath = value;
         }
 
-        private SslCredentials GetSslCredentials()
+        public SslCredentials SslCredentials
         {
-            var ssl = new SslCredentials(CaCertString);
-            return ssl;
+            get
+            {
+                var ssl = new SslCredentials(CaCertString);
+                return ssl;
+            }
         }
 
         public string CaCertPath
@@ -94,13 +102,17 @@ namespace LightningPower
         {
             get
             {
-                if (_caCertString != null) return _caCertString;
+                if (!string.IsNullOrWhiteSpace(_caCertString)) return _caCertString;
                 try
                 {
                     var caCert = File.ReadAllText(CaCertPath);
                     return caCert;
                 }
-                catch (FileNotFoundException e)
+                catch (FileNotFoundException)
+                {
+                    return null;
+                }
+                catch (DirectoryNotFoundException)
                 {
                     return null;
                 }
@@ -112,8 +124,10 @@ namespace LightningPower
         public async Task AsyncAuthInterceptor(AuthInterceptorContext context, Metadata metadata)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
-            if (MacaroonString == null) return;
-            metadata.Add(new Metadata.Entry("macaroon", MacaroonString));
+            if (!string.IsNullOrWhiteSpace(MacaroonString))
+            {
+                metadata.Add(new Metadata.Entry("macaroon", MacaroonString));
+            }
         }
 
         public Channel RpcChannel
@@ -121,7 +135,7 @@ namespace LightningPower
             get
             {
                 var callCredentials = CallCredentials.FromInterceptor(AsyncAuthInterceptor);
-                var channelCredentials = ChannelCredentials.Create(GetSslCredentials(), callCredentials);
+                var channelCredentials = ChannelCredentials.Create(SslCredentials, callCredentials);
                 var channel = new Channel(Host, (int)Port, channelCredentials);
                 return channel;
             }
@@ -139,11 +153,13 @@ namespace LightningPower
             Config = new LndClientConfiguration();
         }
 
-        public void TryUnlockWallet(string password)
+        public List<string> TryUnlockWallet(string password)
         {
+            List<string> mnemonic = new List<string>();
             if (Config.MacaroonString == null)
             {
                 var seed = GenerateSeed();
+                mnemonic = seed.CipherSeedMnemonic.ToList();
                 InitWallet(Config.WalletPassword, seed.CipherSeedMnemonic);
                 Thread.Sleep(3000);
             }
@@ -164,14 +180,16 @@ namespace LightningPower
                    // throw;
                 }
             }
+
+            return mnemonic;
         }
 
-        private Lightning.LightningClient GetLightningClient()
+        public Lightning.LightningClient GetLightningClient()
         {
             return new Lightning.LightningClient(Config.RpcChannel);
         }
 
-        private WalletUnlocker.WalletUnlockerClient GetWalletUnlockerClient()
+        public WalletUnlocker.WalletUnlockerClient GetWalletUnlockerClient()
         {
             return new WalletUnlocker.WalletUnlockerClient(Config.RpcChannel);
         }
@@ -179,16 +197,8 @@ namespace LightningPower
         public GenSeedResponse GenerateSeed()
         {
             var request = new GenSeedRequest();
-            try
-            {
-                var response = GetWalletUnlockerClient().GenSeed(request);
-                return response;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            var response = GetWalletUnlockerClient().GenSeed(request);
+            return response;
         }
 
         public void InitWallet(string walletPassword, RepeatedField<string> seed)
